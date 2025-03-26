@@ -1,4 +1,3 @@
-use core::str;
 use std::io::Read;
 
 use clap::{Parser, Subcommand};
