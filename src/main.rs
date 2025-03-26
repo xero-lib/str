@@ -9,15 +9,19 @@ enum Output {
 enum Operation {
     /* Pattern-Based */
     SplitAtWhitespace {
-        number: Option<i64>, // negative values mean from right
+        #[arg(help = "Optional: number of whitespace segments to split at (negative values start from end)")]
+        number: Option<i64>, 
     },
     SplitAtPat {
-        number: Option<i64>,
+        #[arg(help = "Pattern at which to split the input")]
         pattern: String,
+        #[arg(help = "Optional: number of whitespace segments to split at (negative values start from end")]
+        number: Option<i64>,
     },
     SplitAtChar {
-        number: Option<i64>,
         char: char,
+        #[arg(help = "Optional: number of whitespace segments to split at (negative values start from end")]
+        number: Option<i64>,
     },
     CutFromPat {
         pattern: String,
@@ -73,23 +77,31 @@ enum Operation {
         end: usize,
     },
     TrimFromIndexToOffset {
+        #[arg(help = "Index to start trimming from (index inclusive)")]
         index: usize,
         offset: i64,
     },
     TrimUntilIndex {
+        #[arg(help = "Index to trim until (index exclusive)")]
         index: usize,
     },
     Trim {
+        #[arg(help = "Optional: pattern to trim from beginning and end of input")]
         pattern: Option<String>,
     },
     Replace {
+        #[arg(help = "Pattern to replace inline from input")]
         pattern: String,
+        #[arg(help = "What to replace pattern with (to remove patterns, use remove command)")]
         with: String,
+        #[arg(help = "Optional: number of whitespace segments to split at (negative values start from end")]
         number: Option<i64>,
     },
 
     Remove {
+        #[arg(help = "Pattern to remove inline from input")]
         pattern: String,
+        #[arg(help = "Optional: number of whitespace segments to split at (negative values start from end")]
         number: Option<i64>,
     },
 
@@ -325,7 +337,7 @@ mod op_functions {
             input[if offset.is_negative() {
                 index + (offset as usize - 1)..index
             } else {
-                index..offset as usize
+                index..index+offset as usize
             }]
             .to_string(),
         )
@@ -349,14 +361,13 @@ mod op_functions {
         })
     }
 
-    pub fn trim_from_index_to_offset(start: usize, offset: i64, input: &String) -> Output {
+    pub fn trim_from_index_to_offset(index: usize, offset: i64, input: &String) -> Output {
         Output::Single(
-            input[if offset.is_negative() {
-                start + ((offset - 1) as usize)..start
+            if offset.is_negative() {
+                input[..index+offset as usize].to_string() + &input[index+1..]
             } else {
-                start..start + offset as usize
-            }]
-            .to_string(),
+                input[..index].to_string() + &input[index+offset as usize..]
+            }
         )
     }
 
