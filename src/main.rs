@@ -367,10 +367,10 @@ struct Args {
 }
 
 fn main() {
-    let mut input: String = String::new();
-    std::io::stdin().read_to_string(&mut input).unwrap();
-    match Args::parse().operation.unwrap_or_default().execute(&input) {
-        Output::Multiple(x) => println!("{}", x.join("\n")),
-        Output::Single(x) => println!("{x}"),
-    }
+    for i in std::io::stdin().lines().flatten() {
+        match Args::parse().operation.unwrap_or_default().execute(&i) {
+            Output::Multiple(x) => println!("{}", x.join("\n")),
+            Output::Single(x) => println!("{x}"),
+        }
+    } 
 }
