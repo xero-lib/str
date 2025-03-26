@@ -43,6 +43,9 @@ enum Operation {
     TrimUntilPat {
         pattern: String,
     },
+    TrimToPat {
+        pattern: String,
+    },
 
     /* Index-Based */
     SplitAtIndex {
@@ -75,6 +78,19 @@ enum Operation {
     },
     TrimUntilIndex {
         index: usize,
+    },
+    Trim {
+        pattern: Option<String>,
+    },
+    Replace {
+        pattern: String,
+        with: String,
+        number: Option<i64>,
+    },
+
+    Remove {
+        pattern: String,
+        number: Option<i64>,
     },
 
     /* Mixed */
@@ -121,6 +137,10 @@ impl Operation {
             TrimFromPat { pattern } => trim_from_pat(pattern, input),
             TrimFromPatToPat { start, end } => trim_from_pat_to_pat(start, end, input),
             TrimUntilPat { pattern } => trim_until_pat(pattern, input),
+            TrimToPat { pattern } => trim_to_pat(pattern, input),
+            Trim { pattern } => trim(pattern, input),
+            Replace { pattern, with, number } => replace(pattern, with, *number, input),
+            Remove { pattern, number } => replace(pattern, &"".to_string(), *number, input),
 
             /* Index-Based */
             SplitAtIndex { index } => Output::Multiple({
@@ -252,9 +272,44 @@ mod op_functions {
     // separate fn for trim until last pat?
     pub fn trim_until_pat(pattern: &String, input: &String) -> Output {
         let found_idx = input.find(pattern).unwrap_or(0);
-
         Output::Single(input[found_idx..].to_string())
     }
+    
+    pub fn trim_to_pat(pattern: &String, input: &String) -> Output {
+        let found_idx = input.find(pattern).unwrap_or(0);
+        Output::Single(input[found_idx+input.len()..].to_string())
+    }
+    
+    pub fn trim(pattern: &Option<String>, input: &String) -> Output {
+        Output::Single(
+            match pattern {
+                None => input.trim().to_owned(),
+                Some(p) => input.to_owned().trim_start_matches(p).trim_end_matches(p).to_owned()
+            }
+        )
+    }
+
+    pub fn replace(pattern: &String, with: &String, number: Option<i64>, input: &String) -> Output {
+        Output::Single(
+            match number {
+                None => input.split(pattern).collect::<Vec<&str>>().join(with.as_str()),
+                Some(x) if x.is_negative() => input.rsplitn(x.abs() as usize, pattern).collect(),
+                Some(0) => input.to_owned(),
+                Some(x) => input.splitn(x as usize, pattern).collect(),
+            }
+        )
+    }
+
+    // pub fn remove(pattern: &String, number: Option<i64>, input: &String) -> Output {
+    //     Output::Single(
+    //         match number {
+    //             None => input.split(pattern).collect(),
+    //             Some(x) if x.is_negative() => input.rsplitn(x.abs() as usize, pattern).collect(),
+    //             Some(0) => input.to_owned(),
+    //             Some(x) => input.splitn(x as usize, pattern).collect()
+    //         }
+    //     )
+    // }
 
     /* Index-Based */
     pub fn cut_from_index(index: usize, input: &String) -> Output {
