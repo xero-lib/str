@@ -1,5 +1,3 @@
-use std::io::Read;
-
 use clap::{Parser, Subcommand};
 
 enum Output {
