@@ -1,7 +1,7 @@
 <h1 align="center">str</h1>
 <p align="center" bottom-padding="20px">
   <br>
-  <img width="25%" padding-bottom="100px" src="example.com/svg" alt="str Logo: Rust Logo with diagonal str instead of the classic Rust 'R' inside a black box">
+  <img width="25%" padding-bottom="100px" src="https://github.com/user-attachments/assets/55636d38-378c-4771-8ab7-c08b6e5e8fb1" alt="str Logo: Rust Logo with diagonal str instead of the classic Rust 'R' inside a black box">
   <br>
   <br>
   <!--   two brs because svg padding is inconsistent   -->
