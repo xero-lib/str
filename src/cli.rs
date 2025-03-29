@@ -1,4 +1,3 @@
-
 use clap::{Parser, Subcommand};
 
 pub enum Output {
@@ -244,7 +243,8 @@ pub enum Operation {
         with: String,
         #[arg(
             help = "Optional: number of pattern-matches to replace (negative values start from end)",
-            short, long,
+            short,
+            long
         )]
         number: Option<i64>,
     },
@@ -256,7 +256,11 @@ pub enum Operation {
     Remove {
         #[arg(help = "List of patterns to remove inline from input")]
         pattern: Vec<String>,
-        #[arg(help = "Optional: number of pattern-matches to remove (negative values start from end)", short, long)]
+        #[arg(
+            help = "Optional: number of pattern-matches to remove (negative values start from end)",
+            short,
+            long
+        )]
         number: Option<i64>,
     },
 
@@ -316,8 +320,8 @@ impl Default for Operation {
 
 impl Operation {
     pub fn execute(&self, input: &String) -> Output {
-        use op_functions::*;
         use Operation::*;
+        use op_functions::*;
 
         match self {
             /* Pattern-Based */
@@ -339,7 +343,7 @@ impl Operation {
                 patterns,
                 with,
                 number,
-             } => replace(patterns, with, *number, input),
+            } => replace(patterns, with, *number, input),
             Remove { pattern, number } => replace(pattern, &"".to_string(), *number, input),
 
             /* Index-Based */
@@ -490,11 +494,20 @@ mod op_functions {
         })
     }
 
-    pub fn replace(pattern: &Vec<String>, with: &String, number: Option<i64>, input: &String) -> Output {
+    pub fn replace(
+        pattern: &Vec<String>,
+        with: &String,
+        number: Option<i64>,
+        input: &String,
+    ) -> Output {
         let mut tmp = input.clone();
 
         // first find matches indices and push the first `number`` of them to a vector (place this in match arm?)
-        let mut found: Vec<(usize, usize)> = pattern.iter().map(|p| input.match_indices(p).map(|m| (m.0, m.0 + p.len()))).flatten().collect();
+        let mut found: Vec<(usize, usize)> = pattern
+            .iter()
+            .map(|p| input.match_indices(p).map(|m| (m.0, m.0 + p.len())))
+            .flatten()
+            .collect();
         found.sort();
 
         match number {
@@ -516,7 +529,7 @@ mod op_functions {
                     tmp.insert_str(i.0, &with);
                 });
             }
-            _ => {},
+            _ => {}
         };
 
         Output::Single(tmp.to_owned())
