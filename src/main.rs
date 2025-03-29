@@ -1,7 +1,7 @@
 mod cli;
 
-use cli::{ Operation, Args, Output };
 use clap::Parser;
+use cli::{ Operation, Args, Output };
 
 fn main() {
     let operation: Operation = Args::parse().operation.unwrap_or_default(); // call at top to enable flags without stdin
