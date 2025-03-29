@@ -234,16 +234,17 @@ pub enum Operation {
     },
 
     #[command(
-        about = "Replaces one pattern with another",
-        long_about = "Replaces instances of a given pattern with another, optionally a finite number of times per line (to remove patterns entirely, use remove command)."
+        about = "Replaces a list of patterns with another pattern",
+        long_about = "Replaces instances of given patterns with another pattern, optionally a finite number of times per line (to remove patterns entirely, use remove command)."
     )]
     Replace {
-        #[arg(help = "Pattern to replace inline from input")]
-        pattern: String,
-        #[arg(help = "What to replace pattern with")]
+        #[arg(help = "Patterns to replace inline from input")]
+        patterns: Vec<String>,
+        #[arg(help = "What to replace pattern with", last(true))]
         with: String,
         #[arg(
-            help = "Optional: number of pattern-matches to replace (negative values start from end)"
+            help = "Optional: number of pattern-matches to replace (negative values start from end)",
+            short, long,
         )]
         number: Option<i64>,
     },
@@ -253,11 +254,9 @@ pub enum Operation {
         long_about = "Removes inline a given pattern, optioanlly a finite number of times per line."
     )]
     Remove {
-        #[arg(help = "Pattern to remove inline from input")]
-        pattern: String,
-        #[arg(
-            help = "Optional: number of pattern-matches to remove (negative values start from end)"
-        )]
+        #[arg(help = "List of patterns to remove inline from input")]
+        pattern: Vec<String>,
+        #[arg(help = "Optional: number of pattern-matches to remove (negative values start from end)", short, long)]
         number: Option<i64>,
     },
 
@@ -337,10 +336,10 @@ impl Operation {
             TrimToPat { pattern } => trim_to_pat(pattern, input),
             Trim { pattern } => trim(pattern, input),
             Replace {
-                pattern,
+                patterns,
                 with,
                 number,
-            } => replace(pattern, with, *number, input),
+             } => replace(patterns, with, *number, input),
             Remove { pattern, number } => replace(pattern, &"".to_string(), *number, input),
 
             /* Index-Based */
@@ -491,28 +490,37 @@ mod op_functions {
         })
     }
 
-    pub fn replace(pattern: &String, with: &String, number: Option<i64>, input: &String) -> Output {
-        Output::Single(match number {
-            None => input
-                .split(pattern)
-                .collect::<Vec<&str>>()
-                .join(with.as_str()),
-            Some(x) if x.is_negative() => input.rsplitn(x.abs() as usize, pattern).collect(),
-            Some(0) => input.to_owned(),
-            Some(x) => input.splitn(x as usize, pattern).collect(),
-        })
-    }
+    pub fn replace(pattern: &Vec<String>, with: &String, number: Option<i64>, input: &String) -> Output {
+        let mut tmp = input.clone();
 
-    // pub fn remove(pattern: &String, number: Option<i64>, input: &String) -> Output {
-    //     Output::Single(
-    //         match number {
-    //             None => input.split(pattern).collect(),
-    //             Some(x) if x.is_negative() => input.rsplitn(x.abs() as usize, pattern).collect(),
-    //             Some(0) => input.to_owned(),
-    //             Some(x) => input.splitn(x as usize, pattern).collect()
-    //         }
-    //     )
-    // }
+        // first find matches indices and push the first `number`` of them to a vector (place this in match arm?)
+        let mut found: Vec<(usize, usize)> = pattern.iter().map(|p| input.match_indices(p).map(|m| (m.0, m.0 + p.len()))).flatten().collect();
+        found.sort();
+
+        match number {
+            None => {
+                found.iter().rev().for_each(|i| {
+                    tmp.drain(i.0..i.1);
+                    tmp.insert_str(i.0, &with);
+                });
+            }
+            Some(x) if x.is_negative() => {
+                found.iter().rev().take(x.abs() as usize).for_each(|i| {
+                    tmp.drain(i.0..i.1);
+                    tmp.insert_str(i.0, &with);
+                });
+            }
+            Some(x) if x.is_positive() => {
+                found.iter().take(x.abs() as usize).rev().for_each(|i| {
+                    tmp.drain(i.0..i.1);
+                    tmp.insert_str(i.0, &with);
+                });
+            }
+            _ => {},
+        };
+
+        Output::Single(tmp.to_owned())
+    }
 
     /* Index-Based */
     pub fn cut_from_index(index: usize, input: &String) -> Output {
